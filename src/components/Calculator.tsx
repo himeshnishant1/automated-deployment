@@ -4,10 +4,7 @@ import {
   Grid,
   Button,
   Input,
-  IconButton,
   VStack,
-  HStack,
-  Text,
 } from '@chakra-ui/react';
 
 interface CalculatorState {

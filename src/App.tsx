@@ -5,8 +5,8 @@ function App() {
   return (
     <ChakraProvider>
       <Container maxW="container.xl" py={8}>
-        <VStack spacing={8}>
-          <Heading>Web Calculator</Heading>
+        <VStack gap={8}>
+          <Heading>Calculator</Heading>
           <Calculator />
         </VStack>
       </Container>
