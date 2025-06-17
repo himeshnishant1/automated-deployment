@@ -25,21 +25,23 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
 
-      - name: Install dependencies (Frontend)
+      # Frontend build
+      - name: Install frontend dependencies
+        working-directory: ./frontend
         run: |
-          cd frontend
+          npm install
           npm ci
 
       - name: Build frontend
-        run: |
-          cd frontend
-          npm run build
+        working-directory: ./frontend
+        run: npm run build
 
-      - name: Install dependencies (Backend)
+      # Backend build
+      - name: Install backend dependencies
+        working-directory: ./backend
         run: |
-          cd backend
+          npm install
           npm ci
 
       - name: Deploy to Netlify
