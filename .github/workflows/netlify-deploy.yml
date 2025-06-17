@@ -85,30 +85,18 @@ jobs:
         timeout-minutes: 10
 
       # Backend build and deploy
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli
-
-      - name: Install backend dependencies
-        working-directory: ./backend
-        run: |
-          npm install
-          npm ci
-
-      - name: Deploy Backend to Railway
+      - name: Deploy to Railway
         id: railway-deploy
-        working-directory: ./backend
+        uses: bervProject/railway-deploy@main
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        with:
+          service: "backend"
+          omit_build: true
+          
+      - name: Set Railway deployment URL
         run: |
-          # Set Railway token
-          echo "$RAILWAY_TOKEN" | railway login
-          
-          # Deploy to Railway
-          railway up
-          
-          # Get the deployment URL and set it as output
-          DEPLOY_URL="https://automated-deployment-production-3efb.up.railway.app"
-          echo "deploy-url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+          echo "deploy-url=https://automated-deployment-production-3efb.up.railway.app" >> $GITHUB_OUTPUT
 
   deployment-status:
     needs: deploy
