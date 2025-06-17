@@ -22,12 +22,32 @@ permissions:
   pull-requests: write
   issues: write
 
+env:
+  JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+  JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+  JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    outputs:
+      deploy-url: ${{ steps.netlify-deploy.outputs.deploy-url }}
+      ticket-number: ${{ steps.get-ticket.outputs.ticket }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Get Ticket Number
+        id: get-ticket
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ $COMMIT_MSG =~ (feat|fix):[[:space:]]*([A-Z]+-[0-9]+) ]]; then
+            echo "ticket=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+            echo "Found ticket: ${BASH_REMATCH[2]}"
+          else
+            echo "No ticket found in commit message"
+            echo "ticket=NO-TICKET" >> $GITHUB_OUTPUT
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -72,16 +92,71 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Check Netlify Status
+      - name: Check Netlify Status and Update Jira
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const axios = require('axios');
+            
             try {
               const deployUrl = '${{ needs.deploy.outputs.deploy-url }}';
-              const message = deployUrl 
-                ? `✅ Deployment successful! Site is live at: ${deployUrl}`
-                : '❌ Deployment failed or URL not available';
+              const ticketNumber = '${{ needs.deploy.outputs.ticket-number }}';
+              
+              let message = `🚀 Deployment Status\n\n`;
+              
+              if (ticketNumber && ticketNumber !== 'NO-TICKET') {
+                message += `Ticket: ${ticketNumber}\n`;
+              }
+              
+              message += deployUrl 
+                ? `✅ Deployment successful!\nSite is live at: ${deployUrl}`
+                : `❌ Deployment failed or URL not available`;
+              
+              // Add Jira link if ticket exists
+              if (ticketNumber && ticketNumber !== 'NO-TICKET') {
+                const jiraUrl = `${process.env.JIRA_BASE_URL}/browse/${ticketNumber}`;
+                message += `\n\nJira Ticket: [${ticketNumber}](${jiraUrl})`;
+                
+                // Add comment to Jira
+                const jiraComment = {
+                  body: {
+                    type: "doc",
+                    version: 1,
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [
+                          {
+                            text: `🚀 Deployment Update\n\n${deployUrl ? '✅ Successfully deployed to: ' + deployUrl : '❌ Deployment failed'}\n\nDeployed at: ${new Date().toISOString()}`,
+                            type: "text"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                };
+
+                // Encode credentials for Basic Auth
+                const credentials = Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64');
+                
+                // Post comment to Jira
+                await axios({
+                  method: 'post',
+                  url: `${process.env.JIRA_BASE_URL}/rest/api/3/issue/${ticketNumber}/comment`,
+                  headers: {
+                    'Authorization': `Basic ${credentials}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                  },
+                  data: jiraComment
+                });
+                
+                console.log(`Successfully added comment to Jira ticket ${ticketNumber}`);
+              }
+              
+              // Add timestamp
+              message += `\n\nDeployed at: ${new Date().toISOString()}`;
               
               if (context.issue.number) {
                 await github.rest.issues.createComment({
@@ -91,6 +166,16 @@ jobs:
                   body: message
                 });
               }
+              
+              // Also create a commit comment
+              const sha = context.sha;
+              await github.rest.repos.createCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.name,
+                commit_sha: sha,
+                body: message
+              });
             } catch (error) {
-              console.error('Error posting deployment status:', error);
+              console.error('Error in deployment status step:', error);
+              throw error;
             } 
