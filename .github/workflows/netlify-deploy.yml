@@ -92,6 +92,14 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Node.js and Install axios
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install axios
+        run: npm install axios
+
       - name: Check Netlify Status and Update Jira
         uses: actions/github-script@v6
         with:
