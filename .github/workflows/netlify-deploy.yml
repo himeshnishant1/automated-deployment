@@ -105,7 +105,7 @@ jobs:
           fi
           
           # Link to the project first
-          railway link $RAILWAY_PROJECT_ID
+          railway link --project $RAILWAY_PROJECT_ID
           
           # Deploy the project
           railway up
