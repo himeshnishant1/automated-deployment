@@ -110,6 +110,12 @@ jobs:
             try {
               const deployUrl = '${{ needs.deploy.outputs.deploy-url }}';
               const ticketNumber = '${{ needs.deploy.outputs.ticket-number }}';
+              const repoOwner = context.repo.owner;
+              const repoName = context.repo.name;
+              
+              console.log('Repository:', `${repoOwner}/${repoName}`);
+              console.log('Deployment URL:', deployUrl);
+              console.log('Ticket Number:', ticketNumber);
               
               let message = `🚀 Deployment Status\n\n`;
               
@@ -126,64 +132,79 @@ jobs:
                 const jiraUrl = `${process.env.JIRA_BASE_URL}/browse/${ticketNumber}`;
                 message += `\n\nJira Ticket: [${ticketNumber}](${jiraUrl})`;
                 
-                // Add comment to Jira
-                const jiraComment = {
-                  body: {
-                    type: "doc",
-                    version: 1,
-                    content: [
-                      {
-                        type: "paragraph",
-                        content: [
-                          {
-                            text: `🚀 Deployment Update\n\n${deployUrl ? '✅ Successfully deployed to: ' + deployUrl : '❌ Deployment failed'}\n\nDeployed at: ${new Date().toISOString()}`,
-                            type: "text"
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                };
+                try {
+                  // Add comment to Jira
+                  const jiraComment = {
+                    body: {
+                      type: "doc",
+                      version: 1,
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [
+                            {
+                              text: `🚀 Deployment Update\n\n${deployUrl ? '✅ Successfully deployed to: ' + deployUrl : '❌ Deployment failed'}\n\nDeployed at: ${new Date().toISOString()}`,
+                              type: "text"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  };
 
-                // Encode credentials for Basic Auth
-                const credentials = Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64');
-                
-                // Post comment to Jira
-                await axios({
-                  method: 'post',
-                  url: `${process.env.JIRA_BASE_URL}/rest/api/3/issue/${ticketNumber}/comment`,
-                  headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                  },
-                  data: jiraComment
-                });
-                
-                console.log(`Successfully added comment to Jira ticket ${ticketNumber}`);
+                  // Encode credentials for Basic Auth
+                  const credentials = Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64');
+                  
+                  // Post comment to Jira
+                  await axios({
+                    method: 'post',
+                    url: `${process.env.JIRA_BASE_URL}/rest/api/3/issue/${ticketNumber}/comment`,
+                    headers: {
+                      'Authorization': `Basic ${credentials}`,
+                      'Accept': 'application/json',
+                      'Content-Type': 'application/json'
+                    },
+                    data: jiraComment
+                  });
+                  
+                  console.log(`Successfully added comment to Jira ticket ${ticketNumber}`);
+                } catch (jiraError) {
+                  console.error('Error posting to Jira:', jiraError.message);
+                }
               }
               
               // Add timestamp
               message += `\n\nDeployed at: ${new Date().toISOString()}`;
               
+              // Try to create issue comment if we're in a PR
               if (context.issue.number) {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.name,
-                  issue_number: context.issue.number,
-                  body: message
-                });
+                try {
+                  await github.rest.issues.createComment({
+                    owner: repoOwner,
+                    repo: repoName,
+                    issue_number: context.issue.number,
+                    body: message
+                  });
+                  console.log('Successfully posted PR comment');
+                } catch (prError) {
+                  console.error('Error posting PR comment:', prError.message);
+                }
               }
               
-              // Also create a commit comment
-              const sha = context.sha;
-              await github.rest.repos.createCommitComment({
-                owner: context.repo.owner,
-                repo: context.repo.name,
-                commit_sha: sha,
-                body: message
-              });
+              // Try to create commit comment
+              try {
+                const sha = context.sha;
+                await github.rest.repos.createCommitComment({
+                  owner: repoOwner,
+                  repo: repoName,
+                  commit_sha: sha,
+                  body: message
+                });
+                console.log('Successfully posted commit comment');
+              } catch (commitError) {
+                console.error('Error posting commit comment:', commitError.message);
+              }
             } catch (error) {
-              console.error('Error in deployment status step:', error);
-              throw error;
+              console.error('Error in deployment status step:', error.message);
+              core.setFailed(`Deployment status update failed: ${error.message}`);
             } 
