@@ -89,7 +89,10 @@ jobs:
       - name: Check Railway Auth
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway whoami
+        run: |
+          # Export the token so Railway CLI can read it
+          export RAILWAY_TOKEN=$RAILWAY_TOKEN
+          railway whoami
 
       - name: Deploy Backend to Railway
         id: railway-deploy
@@ -108,6 +111,10 @@ jobs:
             exit 1
           fi
           
+          # Export the token so Railway CLI can read it
+          export RAILWAY_TOKEN=$RAILWAY_TOKEN
+          export RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID
+
           # Link to the project first
           railway link --project $RAILWAY_PROJECT_ID
           
