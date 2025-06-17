@@ -98,11 +98,8 @@ jobs:
             exit 1
           fi
           
-          # Configure Railway token
-          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
-          
-          # Deploy the project
-          railway up
+          # Deploy using environment variables
+          railway up --service backend-service
           
           # Set the deployment URL
           echo "deploy-url=https://automated-deployment-production-3efb.up.railway.app" >> $GITHUB_OUTPUT
