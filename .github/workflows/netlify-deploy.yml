@@ -99,7 +99,15 @@ jobs:
             exit 1
           fi
           
-          # Deploy using environment variables
+          if [ -z "$RAILWAY_PROJECT_ID" ]; then
+            echo "Error: RAILWAY_PROJECT_ID is not set"
+            exit 1
+          fi
+          
+          # Link to the project first
+          railway link $RAILWAY_PROJECT_ID
+          
+          # Deploy the project
           railway up
           
           # Set the deployment URL
