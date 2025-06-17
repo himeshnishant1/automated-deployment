@@ -91,6 +91,7 @@ jobs:
         working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
           # Verify token is set
           if [ -z "$RAILWAY_TOKEN" ]; then
@@ -99,7 +100,7 @@ jobs:
           fi
           
           # Deploy using environment variables
-          railway up --service backend-service
+          railway up
           
           # Set the deployment URL
           echo "deploy-url=https://automated-deployment-production-3efb.up.railway.app" >> $GITHUB_OUTPUT
