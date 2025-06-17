@@ -92,6 +92,7 @@ jobs:
         run: |
           # Export the token so Railway CLI can read it
           export RAILWAY_TOKEN=$RAILWAY_TOKEN
+          railway login --token "$RAILWAY_TOKEN"
           railway whoami
 
       - name: Deploy Backend to Railway
