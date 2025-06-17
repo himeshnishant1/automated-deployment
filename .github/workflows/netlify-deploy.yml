@@ -97,18 +97,17 @@ jobs:
       - name: Deploy Backend to Railway
         id: railway-deploy
         working-directory: ./backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          # Login to Railway
-          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          # Set Railway token
+          echo "$RAILWAY_TOKEN" | railway login
           
-          # Link to project
-          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+          # Deploy to Railway
+          railway up
           
-          # Deploy
-          railway up --service backend
-          
-          # Get deployment URL
-          DEPLOY_URL=$(railway status --json | jq -r '.deployment.url')
+          # Get the deployment URL and set it as output
+          DEPLOY_URL="https://automated-deployment-production-3efb.up.railway.app"
           echo "deploy-url=$DEPLOY_URL" >> $GITHUB_OUTPUT
 
   deployment-status:
