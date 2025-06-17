@@ -14,6 +14,14 @@ on:
           - production
           - staging
 
+# Add permissions for the GITHUB_TOKEN
+permissions:
+  contents: read
+  deployments: write
+  statuses: write
+  pull-requests: write
+  issues: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -45,6 +53,7 @@ jobs:
           npm ci
 
       - name: Deploy to Netlify
+        id: netlify-deploy
         uses: nwtgck/actions-netlify@v2.0
         with:
           publish-dir: './frontend/dist'
@@ -66,15 +75,22 @@ jobs:
       - name: Check Netlify Status
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const deployUrl = '${{ needs.deploy.outputs.deploy-url }}';
-            const message = deployUrl 
-              ? `✅ Deployment successful! Site is live at: ${deployUrl}`
-              : '❌ Deployment failed or URL not available';
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.name,
-              issue_number: context.issue.number,
-              body: message
-            }); 
+            try {
+              const deployUrl = '${{ needs.deploy.outputs.deploy-url }}';
+              const message = deployUrl 
+                ? `✅ Deployment successful! Site is live at: ${deployUrl}`
+                : '❌ Deployment failed or URL not available';
+              
+              if (context.issue.number) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.name,
+                  issue_number: context.issue.number,
+                  body: message
+                });
+              }
+            } catch (error) {
+              console.error('Error posting deployment status:', error);
+            } 
