@@ -1,4 +1,4 @@
-name: Deploy to Netlify
+name: Deploy to Netlify and Railway
 on:
   push:
     branches:
@@ -26,12 +26,15 @@ env:
   JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
   JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
   JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+  RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     outputs:
-      deploy-url: ${{ steps.netlify-deploy.outputs.deploy-url }}
+      frontend-url: ${{ steps.netlify-deploy.outputs.deploy-url }}
+      backend-url: ${{ steps.railway-deploy.outputs.deploy-url }}
       ticket-number: ${{ steps.get-ticket.outputs.ticket }}
     steps:
       - name: Checkout repository
@@ -54,7 +57,7 @@ jobs:
         with:
           node-version: '18'
 
-      # Frontend build
+      # Frontend build and deploy
       - name: Install frontend dependencies
         working-directory: ./frontend
         run: |
@@ -65,21 +68,14 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-      # Backend build
-      - name: Install backend dependencies
-        working-directory: ./backend
-        run: |
-          npm install
-          npm ci
-
-      - name: Deploy to Netlify
+      - name: Deploy Frontend to Netlify
         id: netlify-deploy
         uses: nwtgck/actions-netlify@v2.0
         with:
           publish-dir: './frontend/dist'
           production-branch: main
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: 'Deploy from GitHub Actions'
+          deploy-message: 'Deploy frontend from GitHub Actions'
           enable-pull-request-comment: true
           enable-commit-comment: true
           overwrites-pull-request-comment: true
@@ -87,6 +83,33 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         timeout-minutes: 10
+
+      # Backend build and deploy
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          npm install
+          npm ci
+
+      - name: Deploy Backend to Railway
+        id: railway-deploy
+        working-directory: ./backend
+        run: |
+          # Login to Railway
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          
+          # Link to project
+          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+          
+          # Deploy
+          railway up --service backend
+          
+          # Get deployment URL
+          DEPLOY_URL=$(railway status --json | jq -r '.deployment.url')
+          echo "deploy-url=$DEPLOY_URL" >> $GITHUB_OUTPUT
 
   deployment-status:
     needs: deploy
@@ -100,7 +123,7 @@ jobs:
       - name: Install axios
         run: npm install axios
 
-      - name: Check Netlify Status and Update Jira
+      - name: Check Deployment Status and Update Jira
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -108,13 +131,15 @@ jobs:
             const axios = require('axios');
             
             try {
-              const deployUrl = '${{ needs.deploy.outputs.deploy-url }}';
+              const frontendUrl = '${{ needs.deploy.outputs.frontend-url }}';
+              const backendUrl = '${{ needs.deploy.outputs.backend-url }}';
               const ticketNumber = '${{ needs.deploy.outputs.ticket-number }}';
               const repoOwner = context.repo.owner;
               const repoName = context.repo.name;
               
               console.log('Repository:', `${repoOwner}/${repoName}`);
-              console.log('Deployment URL:', deployUrl);
+              console.log('Frontend URL:', frontendUrl);
+              console.log('Backend URL:', backendUrl);
               console.log('Ticket Number:', ticketNumber);
               
               let message = `🚀 Deployment Status\n\n`;
@@ -123,9 +148,8 @@ jobs:
                 message += `Ticket: ${ticketNumber}\n`;
               }
               
-              message += deployUrl 
-                ? `✅ Deployment successful!\nSite is live at: ${deployUrl}`
-                : `❌ Deployment failed or URL not available`;
+              message += `Frontend: ${frontendUrl ? '✅ Deployed to: ' + frontendUrl : '❌ Deployment failed'}\n`;
+              message += `Backend: ${backendUrl ? '✅ Deployed to: ' + backendUrl : '❌ Deployment failed'}`;
               
               // Add Jira link if ticket exists
               if (ticketNumber && ticketNumber !== 'NO-TICKET') {
@@ -143,7 +167,7 @@ jobs:
                           type: "paragraph",
                           content: [
                             {
-                              text: `🚀 Deployment Update\n\n${deployUrl ? '✅ Successfully deployed to: ' + deployUrl : '❌ Deployment failed'}\n\nDeployed at: ${new Date().toISOString()}`,
+                              text: `🚀 Deployment Update\n\nFrontend: ${frontendUrl ? '✅ Deployed to: ' + frontendUrl : '❌ Deployment failed'}\nBackend: ${backendUrl ? '✅ Deployed to: ' + backendUrl : '❌ Deployment failed'}\n\nDeployed at: ${new Date().toISOString()}`,
                               type: "text"
                             }
                           ]
