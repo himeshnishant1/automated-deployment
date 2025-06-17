@@ -26,8 +26,6 @@ env:
   JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
   JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
   JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-  RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
 
 jobs:
   deploy:
@@ -85,17 +83,28 @@ jobs:
         timeout-minutes: 10
 
       # Backend build and deploy
-      - name: Deploy to Railway
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy Backend to Railway
         id: railway-deploy
-        uses: bervProject/railway-deploy@main
+        working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        with:
-          service: "backend"
-          omit_build: true
-          
-      - name: Set Railway deployment URL
         run: |
+          # Verify token is set
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "Error: RAILWAY_TOKEN is not set"
+            exit 1
+          fi
+          
+          # Configure Railway token
+          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+          
+          # Deploy the project
+          railway up
+          
+          # Set the deployment URL
           echo "deploy-url=https://automated-deployment-production-3efb.up.railway.app" >> $GITHUB_OUTPUT
 
   deployment-status:
