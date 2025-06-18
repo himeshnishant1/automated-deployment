@@ -1,21 +1,12 @@
 // Serverless API handler for Vercel
 const express = require('express');
 const cors = require('cors');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const User = require('../models/user');
+require('dotenv').config();
 
 // JWT secret key - in production, use environment variable
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-
-// Mock user database - in production, use a real database
-const users = [
-  {
-    id: 1,
-    email: 'test@example.com',
-    // Password: test123
-    password: '$2a$10$rrCvWWtxC6KFrHB1zgBhOOu0VhYhD.mMqjyPMHKwxcy2wGrEYreUi'
-  }
-];
 
 // Initialize express for each request (serverless)
 const app = express();
@@ -30,13 +21,13 @@ app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = users.find(u => u.email === email);
+    const user = await User.findByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Compare password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    // Verify password
+    const isValidPassword = await User.verifyPassword(user, password);
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -61,6 +52,40 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Registration endpoint
+app.post('/api/register', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    // Create new user
+    const user = await User.create(email, password);
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // Root route handler (/)
 app.get('/', async (req, res) => {
   try {
@@ -69,7 +94,9 @@ app.get('/', async (req, res) => {
       endpoints: {
         root: '/',
         api: '/api',
-        health: '/api/health'
+        health: '/api/health',
+        login: '/api/login',
+        register: '/api/register'
       },
       timestamp: new Date().toISOString()
     });
