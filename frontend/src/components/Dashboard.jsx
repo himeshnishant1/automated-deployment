@@ -36,7 +36,16 @@ function Dashboard() {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="dashboard-title">
-          <h2>Welcome, {user.email}</h2>
+          <h2>{(() => {
+            if (user.full_name) {
+              const firstName = user.full_name.split(' ')[0];
+              return `Welcome, ${firstName}!`;
+            } else if (user.email) {
+              return `Welcome, User!`;
+            } else {
+              return 'Welcome!';
+            }
+          })()}</h2>
         </div>
         <button className="logout-button" onClick={handleLogout}>Logout</button>
       </header>
