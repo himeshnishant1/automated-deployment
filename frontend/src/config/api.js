@@ -18,7 +18,10 @@ export const API_ROUTES = {
 // Axios default config
 export const API_CONFIG = {
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
   },
-  withCredentials: true
+  withCredentials: true,
+  credentials: 'include'
 }; 
