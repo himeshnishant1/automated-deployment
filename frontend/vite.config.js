@@ -16,6 +16,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '/api')
       },
     },
+    historyApiFallback: true,
   },
   define: {
     'process.env.VITE_API_URL': JSON.stringify(API_URL)

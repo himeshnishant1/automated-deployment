@@ -4,11 +4,12 @@ import Widget from './Widget';
 
 function Dashboard() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  // Check both localStorage and sessionStorage for user
+  const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
+    // Check if user is logged in (token in either storage)
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) {
       navigate('/login');
     }
@@ -17,6 +18,8 @@ function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     navigate('/login');
   };
 
