@@ -6,7 +6,6 @@ function Dashboard() {
   const navigate = useNavigate();
   // Check both localStorage and sessionStorage for user
   const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
-
   useEffect(() => {
     // Check if user is logged in (token in either storage)
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');

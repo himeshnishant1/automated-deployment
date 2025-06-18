@@ -4,7 +4,7 @@ import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
 
 function App() {
-  const isAuthenticated = !!localStorage.getItem('token');
+  const isAuthenticated = !!localStorage.getItem('token') || !!sessionStorage.getItem('token');
 
   return (
     <Router>

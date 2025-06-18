@@ -1,5 +1,8 @@
 // API Configuration
-export const API_URL = import.meta.env.VITE_API_URL || 'https://automated-deployment-frontend-uc5h.vercel.app';
+const isDev = import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+export const API_URL = isDev
+  ? 'http://localhost:4000'
+  : 'https://automated-deployment-frontend-uc5h.vercel.app';
 
 // API Endpoints
 export const ENDPOINTS = {

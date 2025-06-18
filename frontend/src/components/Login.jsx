@@ -49,8 +49,7 @@ function Login() {
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('token', response.data.token);
       storage.setItem('user', JSON.stringify(response.data.user));
-
-      // Redirect to dashboard
+      
       navigate('/dashboard');
     } catch (error) {
       setError(error.response?.data?.error || 'Invalid email or password');
