@@ -5,10 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 6545,
+    port: 8000,
     proxy: {
       '/api': {
-        target: 'https://automated-deployment-production-3efb.up.railway.app',
+        target: 'https://automated-deployment-frontend-uc5h.vercel.app',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api/, '')
@@ -16,6 +16,6 @@ export default defineConfig({
     },
   },
   define: {
-    'process.env.VITE_API_URL': JSON.stringify('https://automated-deployment-production-3efb.up.railway.app')
+    'process.env.VITE_API_URL': JSON.stringify('https://automated-deployment-frontend-uc5h.vercel.app')
   }
 }) 
