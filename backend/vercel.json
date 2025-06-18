@@ -5,7 +5,8 @@
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["config/**", "models/**"]
+        "includeFiles": ["config/**", "models/**", "migrations/**"],
+        "buildCommand": "npm run vercel-build"
       }
     }
   ],

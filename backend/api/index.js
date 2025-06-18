@@ -21,6 +21,60 @@ createTables().catch(err => {
   console.error('Failed to initialize database:', err);
 });
 
+// Input validation middleware
+const validateSignup = (req, res, next) => {
+  const { full_name, email, password, confirm_password } = req.body;
+  
+  if (!full_name || !email || !password || !confirm_password) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  if (password !== confirm_password) {
+    return res.status(400).json({ error: 'Passwords do not match' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+  }
+
+  next();
+};
+
+// Rate limiting (simple implementation)
+const signupAttempts = new Map();
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+const MAX_ATTEMPTS = 5;
+
+const rateLimitSignup = (req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+  
+  if (signupAttempts.has(ip)) {
+    const attempts = signupAttempts.get(ip);
+    const windowStart = attempts.timestamp;
+    
+    if (now - windowStart < RATE_LIMIT_WINDOW) {
+      if (attempts.count >= MAX_ATTEMPTS) {
+        return res.status(429).json({ 
+          error: 'Too many signup attempts. Please try again later.' 
+        });
+      }
+      attempts.count++;
+    } else {
+      signupAttempts.set(ip, { count: 1, timestamp: now });
+    }
+  } else {
+    signupAttempts.set(ip, { count: 1, timestamp: now });
+  }
+  
+  next();
+};
+
 // Login endpoint
 app.post('/api/login', async (req, res) => {
   try {
@@ -92,6 +146,35 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// Signup endpoint
+app.post('/api/signup', rateLimitSignup, validateSignup, async (req, res) => {
+  try {
+    const { full_name, email, password } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already registered' });
+    }
+
+    // Create new user
+    const user = await User.create(full_name, email, password);
+    
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        created_at: user.created_at
+      }
+    });
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Root route handler (/)
 app.get('/', async (req, res) => {
   try {
@@ -155,6 +238,11 @@ app.use((err, req, res, next) => {
     requestId: req.headers['x-vercel-id'] || 'unknown',
     timestamp: new Date().toISOString()
   });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 // Export the serverless function

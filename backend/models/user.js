@@ -8,14 +8,14 @@ class User {
     return rows[0];
   }
 
-  static async create(email, password) {
+  static async create(full_name, email, password) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const query = `
-      INSERT INTO users (email, password)
-      VALUES ($1, $2)
-      RETURNING id, email, created_at
+      INSERT INTO users (full_name, email, password)
+      VALUES ($1, $2, $3)
+      RETURNING id, full_name, email, created_at
     `;
-    const { rows } = await db.query(query, [email, hashedPassword]);
+    const { rows } = await db.query(query, [full_name, email, hashedPassword]);
     return rows[0];
   }
 
