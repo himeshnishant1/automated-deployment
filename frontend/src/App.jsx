@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://automated-deployment-production-3efb.up.railway.app'
+const API_URL = import.meta.env.VITE_API_URL || 'https://automated-deployment-frontend-uc5h.vercel.app'
 
 function App() {
   const [message, setMessage] = useState('')
