@@ -12,6 +12,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
 // Routes
 app.get('/api', (req, res) => {
   res.json({ message: 'Welcome to the API!' });
@@ -30,5 +36,6 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// For Netlify serverless functions
-module.exports.handler = serverless(app); 
+// Export the serverless handler
+const handler = serverless(app);
+module.exports = { handler }; 
