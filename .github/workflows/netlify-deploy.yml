@@ -1,4 +1,4 @@
-name: Deploy to Vercel
+name: Deploy to Netlify and Vercel
 on:
   push:
     branches:
@@ -31,7 +31,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     outputs:
-      frontend-url: ${{ steps.frontend-deploy.outputs.url }}
+      frontend-url: ${{ steps.netlify-deploy.outputs.deploy-url }}
       backend-url: ${{ steps.backend-deploy.outputs.url }}
       ticket-number: ${{ steps.get-ticket.outputs.ticket }}
     steps:
@@ -55,9 +55,6 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-
       # Frontend build and deploy
       - name: Install frontend dependencies
         working-directory: ./frontend
@@ -69,47 +66,38 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-      - name: Deploy Frontend to Vercel
-        id: frontend-deploy
-        working-directory: ./frontend
+      - name: Deploy Frontend to Netlify
+        id: netlify-deploy
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './frontend/dist'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: 'Deploy frontend from GitHub Actions'
+          enable-pull-request-comment: true
+          enable-commit-comment: true
+          overwrites-pull-request-comment: true
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
-        run: |
-          # Verify Vercel credentials
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "Error: VERCEL_TOKEN is not set"
-            exit 1
-          fi
-
-          if [ -z "$VERCEL_ORG_ID" ]; then
-            echo "Error: VERCEL_ORG_ID is not set"
-            exit 1
-          fi
-
-          if [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "Error: VERCEL_PROJECT_ID is not set"
-            exit 1
-          fi
-
-          # Deploy to Vercel
-          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-          vercel build --prod --token=$VERCEL_TOKEN
-          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
-          
-          # Set the deployment URL as output
-          echo "url=https://automated-deployment-frontend-uc5h.vercel.app" >> $GITHUB_OUTPUT
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 10
 
       # Backend build and deploy to Vercel
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
       - name: Deploy Backend to Vercel
         id: backend-deploy
         working-directory: ./backend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
+          export VERCEL_TOKEN=$VERCEL_TOKEN
+          export VERCEL_ORG_ID=$VERCEL_ORG_ID
+          export VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID
+          
           # Verify Vercel token is set
           if [ -z "$VERCEL_TOKEN" ]; then
             echo "Error: VERCEL_TOKEN is not set"
