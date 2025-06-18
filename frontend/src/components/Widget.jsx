@@ -16,6 +16,7 @@ function Widget({ title, description, children }) {
   );
 }
 
+
 Widget.propTypes = {
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
