@@ -117,7 +117,7 @@ jobs:
           # Deploy to Vercel
           vercel pull --yes --environment=production --token=$VERCEL_TOKEN
           vercel build --prod --token=$VERCEL_TOKEN
-          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
           
           # Set the deployment URL as output
           echo "url=https://automated-deployment-frontend-uc5h.vercel.app" >> $GITHUB_OUTPUT
