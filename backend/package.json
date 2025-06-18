@@ -2,11 +2,10 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Backend for full-stack application",
-  "main": "src/server.js",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "build": "echo 'Building serverless function'",
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js",
     "vercel-build": "echo 'Building for Vercel'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
