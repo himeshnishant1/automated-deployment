@@ -15,7 +15,7 @@ const app = express();
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://automated-deployment-frontend-uc5h.vercel.app', 'https://aitools.vercel.app']
+    ? ['https://automated-deployment-frontend-uc5h.vercel.app']
     : 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

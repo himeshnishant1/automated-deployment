@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://automated-deployment-frontend-uc5h.vercel.app';
+import { API_ROUTES, API_CONFIG } from '../config/api';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -17,10 +16,10 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/api/login`, {
+      const response = await axios.post(API_ROUTES.LOGIN, {
         email,
         password
-      });
+      }, API_CONFIG);
 
       // Store token in localStorage
       localStorage.setItem('token', response.data.token);
