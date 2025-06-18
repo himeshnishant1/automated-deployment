@@ -15,10 +15,41 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+  // Don't exit the process in production
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(-1);
+  }
 });
+
+// Helper function to get a client with error handling
+const getClient = async () => {
+  const client = await pool.connect();
+  const query = client.query;
+  const release = client.release;
+
+  // Set a timeout of 5 seconds on idle clients
+  const timeout = setTimeout(() => {
+    console.error('A client has been checked out for too long.');
+    console.error(`The last executed query on this client was: ${client.lastQuery}`);
+  }, 5000);
+
+  // Monkey patch the query method to keep track of the last query executed
+  client.query = (...args) => {
+    client.lastQuery = args;
+    return query.apply(client, args);
+  };
+
+  client.release = () => {
+    clearTimeout(timeout);
+    client.query = query;
+    client.release = release;
+    return release.apply(client);
+  };
+
+  return client;
+};
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
-  getClient: () => pool.connect(),
+  getClient,
 }; 

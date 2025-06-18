@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const { createTables } = require('../config/init-db');
 require('dotenv').config();
 
 // JWT secret key - in production, use environment variable
@@ -14,6 +15,11 @@ const app = express();
 // Essential middleware only
 app.use(cors());
 app.use(express.json());
+
+// Initialize database tables
+createTables().catch(err => {
+  console.error('Failed to initialize database:', err);
+});
 
 // Login endpoint
 app.post('/api/login', async (req, res) => {
