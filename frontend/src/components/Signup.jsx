@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://automated-deployment-frontend-uc5h.vercel.app';
+
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -28,7 +30,7 @@ const Signup = () => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:3000/api/signup', formData);
+      const response = await axios.post(`${API_URL}/api/signup`, formData);
       console.log('Signup successful:', response.data);
       navigate('/login'); // Redirect to login page after successful signup
     } catch (err) {

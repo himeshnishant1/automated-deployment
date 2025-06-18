@@ -12,8 +12,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 // Initialize express for each request (serverless)
 const app = express();
 
+// CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://automated-deployment-frontend-uc5h.vercel.app', 'https://aitools.vercel.app']
+    : 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 // Essential middleware only
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Initialize database tables
@@ -112,40 +122,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Registration endpoint
-app.post('/api/register', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findByEmail(email);
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-
-    // Create new user
-    const user = await User.create(email, password);
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.status(201).json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email
-      }
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
 // Signup endpoint
 app.post('/api/signup', rateLimitSignup, validateSignup, async (req, res) => {
   try {
@@ -160,8 +136,16 @@ app.post('/api/signup', rateLimitSignup, validateSignup, async (req, res) => {
     // Create new user
     const user = await User.create(full_name, email, password);
     
+    // Generate JWT token for immediate login
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
     res.status(201).json({
       message: 'User created successfully',
+      token,
       user: {
         id: user.id,
         full_name: user.full_name,
@@ -185,7 +169,7 @@ app.get('/', async (req, res) => {
         api: '/api',
         health: '/api/health',
         login: '/api/login',
-        register: '/api/register'
+        signup: '/api/signup'
       },
       timestamp: new Date().toISOString()
     });
@@ -198,8 +182,11 @@ app.get('/', async (req, res) => {
 app.get('/api', async (req, res) => {
   try {
     res.json({
-      message: 'Welcome to the API!',
-      version: '1.0.0',
+      message: 'API is running',
+      endpoints: {
+        login: '/api/login',
+        signup: '/api/signup'
+      },
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -207,18 +194,9 @@ app.get('/api', async (req, res) => {
   }
 });
 
-// Health check endpoint (/api/health)
-app.get('/api/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      version: '1.0.0',
-      serverTime: new Date().toISOString(),
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Health Check Failed' });
-  }
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
 // 404 handler for undefined routes
