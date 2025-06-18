@@ -1,6 +1,21 @@
 // Serverless API handler for Vercel
 const express = require('express');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// JWT secret key - in production, use environment variable
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// Mock user database - in production, use a real database
+const users = [
+  {
+    id: 1,
+    email: 'test@example.com',
+    // Password: test123
+    password: '$2a$10$rrCvWWtxC6KFrHB1zgBhOOu0VhYhD.mMqjyPMHKwxcy2wGrEYreUi'
+  }
+];
 
 // Initialize express for each request (serverless)
 const app = express();
@@ -8,6 +23,43 @@ const app = express();
 // Essential middleware only
 app.use(cors());
 app.use(express.json());
+
+// Login endpoint
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user by email
+    const user = users.find(u => u.email === email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Compare password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 // Root route handler (/)
 app.get('/', async (req, res) => {

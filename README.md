@@ -12,6 +12,7 @@ This is a modern full-stack application built with React and Node.js, configured
     └── src/          # Source files
 ```
 
+
 ## Getting Started
 
 ### Prerequisites
