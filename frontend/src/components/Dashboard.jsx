@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Widget from './Widget';
+import TimeDisplay from './TimeDisplay';
 import useUserProfile from '../hooks/useUserProfile';
 
 function Dashboard() {
@@ -47,6 +48,7 @@ function Dashboard() {
         <div className="dashboard-title">
           <h2>{getWelcomeMessage()}</h2>
         </div>
+        <TimeDisplay />
         <button className="logout-button" onClick={handleLogout}>Logout</button>
       </header>
 

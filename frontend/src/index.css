@@ -167,6 +167,23 @@ button:disabled {
   font-size: 1.8rem;
 }
 
+.time-display {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.time-text {
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #495057;
+  letter-spacing: 1px;
+}
+
 .logout-button {
   max-width: 120px;
   background-color: #dc3545;
@@ -247,11 +264,22 @@ button:disabled {
 
   .dashboard-header {
     flex-direction: column;
-    text-align: center;
     gap: 1rem;
+    align-items: stretch;
+  }
+
+  .dashboard-title h2 {
+    text-align: center;
+    font-size: 1.5rem;
+  }
+
+  .time-display {
+    align-self: center;
+    max-width: 200px;
   }
 
   .logout-button {
-    max-width: 100%;
+    align-self: center;
+    max-width: 120px;
   }
 } 
