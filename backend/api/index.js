@@ -32,6 +32,24 @@ createTables().catch(err => {
   console.error('Failed to initialize database:', err);
 });
 
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
 // Input validation middleware
 const validateSignup = (req, res, next) => {
   const { full_name, email, password, confirm_password } = req.body;
@@ -114,6 +132,7 @@ app.post('/api/login', async (req, res) => {
       token,
       user: {
         id: user.id,
+        full_name: user.full_name,
         email: user.email
       }
     });
@@ -160,6 +179,26 @@ app.post('/api/signup', rateLimitSignup, validateSignup, async (req, res) => {
   }
 });
 
+// User profile endpoint
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const user = await User.findByEmail(userEmail);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      full_name: user.full_name,
+      email: user.email
+    });
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+});
+
 // Root route handler (/)
 app.get('/', async (req, res) => {
   try {
@@ -170,7 +209,8 @@ app.get('/', async (req, res) => {
         api: '/api',
         health: '/api/health',
         login: '/api/login',
-        signup: '/api/signup'
+        signup: '/api/signup',
+        userProfile: '/api/user/profile'
       },
       timestamp: new Date().toISOString()
     });
@@ -186,7 +226,8 @@ app.get('/api', async (req, res) => {
       message: 'API is running',
       endpoints: {
         login: '/api/login',
-        signup: '/api/signup'
+        signup: '/api/signup',
+        userProfile: '/api/user/profile'
       },
       timestamp: new Date().toISOString()
     });

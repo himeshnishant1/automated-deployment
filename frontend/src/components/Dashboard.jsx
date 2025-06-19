@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Widget from './Widget';
+import useUserProfile from '../hooks/useUserProfile';
 
 function Dashboard() {
   const navigate = useNavigate();
-  // Check both localStorage and sessionStorage for user
-  const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+  const { profile, loading, error } = useUserProfile();
+
   useEffect(() => {
     // Check if user is logged in (token in either storage)
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -32,20 +33,19 @@ function Dashboard() {
     { id: 6, title: 'Task Manager', description: 'Manage and track tasks' },
   ];
 
+  const getWelcomeMessage = () => {
+    if (loading) return 'Loading...';
+    if (error) return 'Welcome!';
+    if (profile?.full_name) return `Welcome, ${profile.full_name}!`;
+    if (profile?.email) return `Welcome, User!`;
+    return 'Welcome!';
+  };
+
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="dashboard-title">
-          <h2>{(() => {
-            if (user.full_name) {
-              const firstName = user.full_name.split(' ')[0];
-              return `Welcome, ${firstName}!`;
-            } else if (user.email) {
-              return `Welcome, User!`;
-            } else {
-              return 'Welcome!';
-            }
-          })()}</h2>
+          <h2>{getWelcomeMessage()}</h2>
         </div>
         <button className="logout-button" onClick={handleLogout}>Logout</button>
       </header>
