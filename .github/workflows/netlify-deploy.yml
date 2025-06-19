@@ -46,7 +46,7 @@ jobs:
             echo "ticket=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
             echo "Found ticket: ${BASH_REMATCH[2]}"
           else
-            echo "No ticket found in commit message: ${COMMIT_MSG}"
+            echo "No ticket found in commit message"
             echo "ticket=NO-TICKET" >> $GITHUB_OUTPUT
           fi
 
