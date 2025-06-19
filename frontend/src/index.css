@@ -167,6 +167,58 @@ button:disabled {
   font-size: 1.8rem;
 }
 
+/* Enhanced Time Display Styles */
+.time-display-enhanced {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  min-width: 180px;
+}
+
+.time-display-enhanced:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.time-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+}
+
+.time-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.time-text-enhanced {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.date-text {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Legacy time display styles (keeping for backward compatibility) */
 .time-display {
   display: flex;
   align-items: center;
@@ -273,6 +325,22 @@ button:disabled {
     font-size: 1.5rem;
   }
 
+  .time-display-enhanced {
+    align-self: center;
+    min-width: 160px;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .time-text-enhanced {
+    font-size: 1rem;
+  }
+
+  .date-text {
+    font-size: 0.75rem;
+  }
+
+  /* Legacy time display responsive styles */
   .time-display {
     align-self: center;
     max-width: 200px;
@@ -281,5 +349,20 @@ button:disabled {
   .logout-button {
     align-self: center;
     max-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .time-display-enhanced {
+    min-width: 140px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .time-text-enhanced {
+    font-size: 0.9rem;
+  }
+
+  .date-text {
+    font-size: 0.7rem;
   }
 } 

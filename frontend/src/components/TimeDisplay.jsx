@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 function TimeDisplay() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -13,19 +14,34 @@ function TimeDisplay() {
     return () => clearInterval(interval);
   }, []);
 
-  // Format time as HH:MM:SS
+  // Format time as HH:MM:SS with AM/PM
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', {
-      hour12: false,
+      hour12: true,
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
     });
   };
 
+  // Format date for additional context
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
-    <div className="time-display">
-      <span className="time-text">{formatTime(currentTime)}</span>
+    <div className="time-display-enhanced">
+      <div className="time-icon">
+        <AccessTimeIcon sx={{ fontSize: 20, color: '#6b7280' }} />
+      </div>
+      <div className="time-content">
+        <div className="time-text-enhanced">{formatTime(currentTime)}</div>
+        <div className="date-text">{formatDate(currentTime)}</div>
+      </div>
     </div>
   );
 }
