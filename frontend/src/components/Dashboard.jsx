@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Widget from './Widget';
 import TimeDisplay from './TimeDisplay';
+import TodoModule from './TodoModule';
 import useUserProfile from '../hooks/useUserProfile';
 
 function Dashboard() {
@@ -31,7 +32,6 @@ function Dashboard() {
     { id: 3, title: 'Recent Activity', description: 'Latest updates and changes' },
     { id: 4, title: 'Notifications', description: 'Important alerts and messages' },
     { id: 5, title: 'Resource Monitor', description: 'System resource utilization' },
-    { id: 6, title: 'Task Manager', description: 'Manage and track tasks' },
   ];
 
   const getWelcomeMessage = () => {
@@ -53,6 +53,12 @@ function Dashboard() {
       </header>
 
       <div className="widgets-grid">
+        {/* Todo Module - First widget */}
+        <div className="widget-card todo-widget">
+          <TodoModule />
+        </div>
+        
+        {/* Other widgets */}
         {widgets.map(widget => (
           <Widget
             key={widget.id}

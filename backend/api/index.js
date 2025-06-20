@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const Todo = require('../models/todo');
 const { createTables } = require('../config/init-db');
 require('dotenv').config();
 
@@ -199,6 +200,120 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// Todo endpoints
+// Get all todos for a user
+app.get('/api/todos', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const limit = req.query.limit ? parseInt(req.query.limit) : null;
+    
+    const todos = await Todo.findByUserId(userId, limit);
+    res.json(todos);
+  } catch (error) {
+    console.error('Fetch todos error:', error);
+    res.status(500).json({ error: 'Failed to fetch todos' });
+  }
+});
+
+// Get a specific todo
+app.get('/api/todos/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const todoId = parseInt(req.params.id);
+    
+    const todo = await Todo.findById(todoId, userId);
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
+    }
+    
+    res.json(todo);
+  } catch (error) {
+    console.error('Fetch todo error:', error);
+    res.status(500).json({ error: 'Failed to fetch todo' });
+  }
+});
+
+// Create a new todo
+app.post('/api/todos', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { title, description } = req.body;
+    
+    if (!title || title.trim() === '') {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    
+    const todo = await Todo.create(userId, title.trim(), description?.trim() || '');
+    res.status(201).json(todo);
+  } catch (error) {
+    console.error('Create todo error:', error);
+    res.status(500).json({ error: 'Failed to create todo' });
+  }
+});
+
+// Update a todo
+app.put('/api/todos/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const todoId = parseInt(req.params.id);
+    const { title, description, completed } = req.body;
+    
+    const todo = await Todo.findById(todoId, userId);
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
+    }
+    
+    const updatedTodo = await Todo.update(todoId, userId, {
+      title: title?.trim(),
+      description: description?.trim(),
+      completed
+    });
+    
+    res.json(updatedTodo);
+  } catch (error) {
+    console.error('Update todo error:', error);
+    res.status(500).json({ error: 'Failed to update todo' });
+  }
+});
+
+// Toggle todo completion
+app.patch('/api/todos/:id/toggle', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const todoId = parseInt(req.params.id);
+    
+    const todo = await Todo.findById(todoId, userId);
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
+    }
+    
+    const updatedTodo = await Todo.toggleComplete(todoId, userId);
+    res.json(updatedTodo);
+  } catch (error) {
+    console.error('Toggle todo error:', error);
+    res.status(500).json({ error: 'Failed to toggle todo' });
+  }
+});
+
+// Delete a todo
+app.delete('/api/todos/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const todoId = parseInt(req.params.id);
+    
+    const todo = await Todo.findById(todoId, userId);
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
+    }
+    
+    await Todo.delete(todoId, userId);
+    res.json({ message: 'Todo deleted successfully' });
+  } catch (error) {
+    console.error('Delete todo error:', error);
+    res.status(500).json({ error: 'Failed to delete todo' });
+  }
+});
+
 // Root route handler (/)
 app.get('/', async (req, res) => {
   try {
@@ -210,7 +325,8 @@ app.get('/', async (req, res) => {
         health: '/api/health',
         login: '/api/login',
         signup: '/api/signup',
-        userProfile: '/api/user/profile'
+        userProfile: '/api/user/profile',
+        todos: '/api/todos'
       },
       timestamp: new Date().toISOString()
     });
@@ -227,7 +343,8 @@ app.get('/api', async (req, res) => {
       endpoints: {
         login: '/api/login',
         signup: '/api/signup',
-        userProfile: '/api/user/profile'
+        userProfile: '/api/user/profile',
+        todos: '/api/todos'
       },
       timestamp: new Date().toISOString()
     });

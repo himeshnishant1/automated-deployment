@@ -9,7 +9,8 @@ export const ENDPOINTS = {
   LOGIN: '/api/login',
   SIGNUP: '/api/signup',
   HEALTH: '/api/health',
-  USER_PROFILE: '/api/user/profile'
+  USER_PROFILE: '/api/user/profile',
+  TODOS: '/api/todos'
 };
 
 // Create full URLs for each endpoint
@@ -17,7 +18,8 @@ export const API_ROUTES = {
   LOGIN: `${API_URL}${ENDPOINTS.LOGIN}`,
   SIGNUP: `${API_URL}${ENDPOINTS.SIGNUP}`,
   HEALTH: `${API_URL}${ENDPOINTS.HEALTH}`,
-  USER_PROFILE: `${API_URL}${ENDPOINTS.USER_PROFILE}`
+  USER_PROFILE: `${API_URL}${ENDPOINTS.USER_PROFILE}`,
+  TODOS: `${API_URL}${ENDPOINTS.TODOS}`
 };
 
 // Axios default config
